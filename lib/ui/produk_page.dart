@@ -1,3 +1,6 @@
+import 'package:crud_toko/bloc/logout_bloc.dart';
+import 'package:crud_toko/bloc/produk_bloc.dart';
+import 'package:crud_toko/ui/login_page.dart';
 import 'package:flutter/material.dart';
 import 'package:crud_toko/model/produk.dart';
 import 'package:crud_toko/ui/produk_detail.dart';
@@ -33,23 +36,28 @@ class _ProdukPageState extends State<ProdukPage> {
               ListTile(
                 title: const Text('Logout'),
                 trailing: const Icon(Icons.logout),
-                onTap: () async {},
+                onTap: () async {
+                  await LogoutBloc.logout().then((value) => {
+                        Navigator.pushReplacement(
+                            context, MaterialPageRoute(builder: (context) => const LoginPage()))
+                      });
+                },
               )
             ],
           ),
         ),
-        body: ListView(
-          children: [
-            ItemProduk(
-                produk:
-                    Produk(id: 1, kodeProduk: 'A001', namaProduk: 'Kamera', hargaProduk: 5000000)),
-            ItemProduk(
-                produk:
-                    Produk(id: 2, kodeProduk: 'A002', namaProduk: 'Kulkas', hargaProduk: 2500000)),
-            ItemProduk(
-                produk: Produk(
-                    id: 3, kodeProduk: 'A003', namaProduk: 'Mesin Cuci', hargaProduk: 2000000)),
-          ],
+        body: FutureBuilder<List>(
+          future: ProdukBloc.getProduks(),
+          builder: (context, snapshot) {
+            if (snapshot.hasError) print(snapshot.error);
+            return snapshot.hasData
+                ? ListProduk(
+                    list: snapshot.data,
+                  )
+                : const Center(
+                    child: CircularProgressIndicator(),
+                  );
+          },
         ));
   }
 }
@@ -77,5 +85,22 @@ class ItemProduk extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+class ListProduk extends StatelessWidget {
+  final List? list;
+
+  const ListProduk({Key? key, this.list}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.builder(
+        itemCount: list == null ? 0 : list!.length,
+        itemBuilder: (context, i) {
+          return ItemProduk(
+            produk: list![i],
+          );
+        });
   }
 }

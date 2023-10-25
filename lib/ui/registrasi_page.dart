@@ -1,3 +1,6 @@
+import 'package:crud_toko/bloc/registrasi_bloc.dart';
+import 'package:crud_toko/widget/success_dialog.dart';
+import 'package:crud_toko/widget/warning_dialog.dart';
 import 'package:flutter/material.dart';
 
 class RegistrasiPage extends StatefulWidget {
@@ -9,11 +12,60 @@ class RegistrasiPage extends StatefulWidget {
 
 class _RegistrasiPageState extends State<RegistrasiPage> {
   final _formKey = GlobalKey<FormState>();
-  final bool _isLoading = false;
+  bool _isLoading = false;
 
   final _namaTextboxController = TextEditingController();
   final _emailTextboxController = TextEditingController();
   final _passwordTextboxController = TextEditingController();
+
+  Widget _buttonRegistrasi() {
+    print('submit pressed');
+    return ElevatedButton(
+        child: const Text("Registrasi"),
+        onPressed: () {
+          if (_formKey.currentState != null) {
+            var validate = _formKey.currentState!.validate();
+            if (validate) {
+              if (!_isLoading) _submit();
+            }
+          }
+        });
+  }
+
+  void _submit() {
+    if (_formKey.currentState != null) {
+      _formKey.currentState!.save();
+      setState(() {
+        _isLoading = true;
+      });
+      RegistrasiBloc.registrasi(
+              nama: _namaTextboxController.text,
+              email: _emailTextboxController.text,
+              password: _passwordTextboxController.text)
+          .then((value) {
+        showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (BuildContext context) => SuccessDialog(
+                  description: "Registrasi berhasil, silahkan login",
+                  okClick: () {
+                    Navigator.pop(context);
+                  },
+                ));
+      }, onError: (error) {
+        print(error);
+        showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (BuildContext context) => const WarningDialog(
+                  description: "Registrasi gagal, silahkan coba lagi",
+                ));
+      });
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -111,14 +163,5 @@ class _RegistrasiPageState extends State<RegistrasiPage> {
         return null;
       },
     );
-  }
-
-  //Membuat Tombol Registrasi
-  Widget _buttonRegistrasi() {
-    return ElevatedButton(
-        child: const Text("Registrasi"),
-        onPressed: () {
-          var validate = _formKey.currentState!.validate();
-        });
   }
 }

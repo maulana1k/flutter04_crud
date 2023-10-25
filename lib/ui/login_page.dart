@@ -1,4 +1,8 @@
+import 'package:crud_toko/bloc/login_bloc.dart';
+import 'package:crud_toko/helpers/user_info.dart';
+import 'package:crud_toko/ui/produk_page.dart';
 import 'package:crud_toko/ui/registrasi_page.dart';
+import 'package:crud_toko/widget/warning_dialog.dart';
 import 'package:flutter/material.dart';
 
 class LoginPage extends StatefulWidget {
@@ -10,10 +14,47 @@ class LoginPage extends StatefulWidget {
 
 class _LoginPageState extends State<LoginPage> {
   final _formKey = GlobalKey<FormState>();
-  final bool _isLoading = false;
+  bool _isLoading = false;
 
   final _emailTextboxController = TextEditingController();
   final _passwordTextboxController = TextEditingController();
+  Widget _buttonLogin() {
+    return ElevatedButton(
+        child: const Text("Log In"),
+        onPressed: () {
+          var validate = _formKey.currentState!.validate();
+          if (validate) {
+            if (!_isLoading) _submit();
+          }
+        });
+  }
+
+  void _submit() {
+    _formKey.currentState!.save();
+    setState(() {
+      _isLoading = true;
+    });
+    LoginBloc.login(email: _emailTextboxController.text, password: _passwordTextboxController.text)
+        .then((value) async {
+      await UserInfo().setToken(value.token.toString());
+      final id = int.parse(value.userID.toString());
+      await UserInfo().setUserID(id);
+      // ignore: use_build_context_synchronously
+      Navigator.pushReplacement(
+          context, MaterialPageRoute(builder: (context) => const ProdukPage()));
+    }, onError: (error) {
+      print(error);
+      showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (BuildContext context) => const WarningDialog(
+                description: "Login gagal, silahkan coba lagi",
+              ));
+    });
+    setState(() {
+      _isLoading = false;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -74,15 +115,6 @@ class _LoginPageState extends State<LoginPage> {
         return null;
       },
     );
-  }
-
-  //Membuat Tombol Login
-  Widget _buttonLogin() {
-    return ElevatedButton(
-        child: const Text("Login"),
-        onPressed: () {
-          var validate = _formKey.currentState!.validate();
-        });
   }
 
   // Membuat menu untuk membuka halaman registrasi
